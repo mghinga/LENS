@@ -1,11 +1,16 @@
-import argparse, os
+import argparse
+import os
+from operator import gt
 import numpy as np
+from matplotlib.image import imsave
 
 import reader
 
 HAS_GROUND_TRUTH = False
+TWO_DIM = False
 
-def separate_ground_truth(filenames:list)->list:
+
+def separate_ground_truth(filenames: list) -> list:
     ground_truth = []
     images = []
     for f in filenames:
@@ -13,15 +18,17 @@ def separate_ground_truth(filenames:list)->list:
             ground_truth.append(f)
         else:
             images.append(f)
-    return ground_truth, images
+    return images, ground_truth
 
-def check_directory(directory:str)->bool:
+
+def check_directory(directory: str) -> bool:
     for file in os.listdir(directory):
         if file.endswith('.nii'):
             return True
     return False
 
-def walk_files(directory:str)->list:
+
+def walk_files(directory: str) -> list:
     paths = []
     for dirpath, dirnames, filenames in os.walk(directory):
         for filename in filenames:
@@ -31,40 +38,45 @@ def walk_files(directory:str)->list:
                 paths.append(filename)
     return paths
 
+
 def main():
     dataset_name = ''
     # take in and process arguments
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-k", "--kassin", type=bool, help="Segments data from Kassin, et al. Available from the authors.")
-    group.add_argument("-s", "--segmented_volumes", type=bool, help="Segments data from Segmentation dataset nr. 2 (13th April) available at https://medicalsegmentation.com/covid19/.")
-    group.add_argument("-t", "--two_dim", type=bool, help="Segments data from COVID-19 CT segmentation dataset available at https://medicalsegmentation.com/covid19/.")
+    parser.add_argument("-t", "--type", type=str,
+                       help="Selection from k for Kassin et al, s for 3D segmented volumes, t for 2D segmentations, or x for exit.")
     options = parser.parse_args()
 
     footprint_size = 6
 
-    if options.kassin and not options.segmented_volumes and not options.two_dim:
+    if options.type == 'k':
         dataset_name = 'Kassin et al'
         directory = input("Enter file path: ")
         while not os.path.isdir(directory) or not check_directory(directory):
-            directory = input("Directory invalid. Enter a valid directory or press 'h' for help.: ")
+            directory = input(
+                "Directory invalid. Enter a valid directory or press 'h' for help.: ")
             if directory == 'h':
                 print("The data from Kassin et al must be requested from the authors. This software expects that all files have .nii file extension.")
         paths = walk_files(directory)
-    elif not options.kassin and options.segmented_volumes and not options.two_dim:
+    elif options.type == 's':
         dataset_name = 'three dimensional'
         HAS_GROUND_TRUTH = True
         paths = walk_files('resources/three_dimensional')
-    elif not options.kassin and not options.segmented_volumes and options.two_dim:
+    elif options.type == 't':
         dataset_name = 'two dimensional'
         HAS_GROUND_TRUTH = True
+        TWO_DIM = True
         paths = walk_files('resources/two_dimensional')
+    elif options.type == 'x':
+        print('Exiting.')
+        exit()
     else:
         print('Select only one of these options:')
         print(' --kassin for data from Kassin et al.')
         print(' --segmented_volumes from 3D volumes from https://medicalsegmentation.com/covid19/')
         print(' --two_dim for 2D segmentations from https://medicalsegmentation.com/covid19/')
-       
+        print('Exiting. Try again.')
+
     print('{} images found.'.format(len(paths)))
     print('Begin processing {} dataset...'.format(dataset_name))
     # set up file reader and analysis on volumes
@@ -76,7 +88,11 @@ def main():
         paths.sort()
         ground_truth.sort()
         for i in range(len(paths)):
-            read = reader.Reader(paths[i], i, footprint_size, ground_truth[i])
+
+            read = reader.Reader(
+                paths[i], i, footprint_size, ground_truth[i], two_d=TWO_DIM)
+            gt_name = 'output/two_dimensional/gt_' + str(i) + '_.png'
+            imsave(gt_name, ground_truth[i], cmap='gray')
             lung_volumes.append(read.lung_volume)
             lesion_volumes.append(read.lesion_volume)
             no_processing_volumes.append(read.lesion_volume)
@@ -103,6 +119,7 @@ def main():
     print('Lesion Volumes without Bronchial Tree Removal: ')
     for i in range(len(no_processing_volumes)):
         print(' --', no_processing_volumes[i])
+
 
 if __name__ == "__main__":
     main()
