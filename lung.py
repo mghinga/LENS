@@ -31,7 +31,10 @@ class Lung:
         self.voxel_x = voxel_x
         self.voxel_y = voxel_y
         self.voxel_z = voxel_z
-        self.slices = helper_functions.create_slices(self.volume)
+        if voxel_z > 0:
+            self.slices = helper_functions.create_slices(self.volume)
+        else:
+            self.slices = [self.volume]
         self.segmentations, self.masks = self.process()
         self.lung_volume = self.calculate_lung_volume()
 

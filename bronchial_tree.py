@@ -15,14 +15,12 @@ The result should be a segmentation of the bronchus region.
 
 import statistics, math, sys, pickle
 
-from skimage.filters import unsharp_mask, sato, rank, threshold_otsu
+from skimage.filters import unsharp_mask, sato, rank
 from skimage import util
 from skimage.transform import rescale
 
 import numpy as np
 import pandas as pd
-
-import matplotlib.pyplot as plt
 
 import plotly.graph_objects as go
 
@@ -36,7 +34,10 @@ class BronchialTree():
         self.lung_mask = self.create_lung_mask()
         self.x_mm = x_mm
         self.y_mm = y_mm
-        self.slices = helper_functions.create_slices(self.volume)
+        if len(self.volume.shape) > 2:
+            self.slices = helper_functions.create_slices(self.volume)
+        else:
+            self.slices = [self.volume]
         self.morphometry_path = 'resources/morphometry.txt'
         self.morphometry_info = self.read_in_morphometry_info()
         self.avg_radii = self.calculate_radii_per_generation()
@@ -44,48 +45,17 @@ class BronchialTree():
         self.preprocessed_slices, self.preprocessed_volume = self.preprocessing()
         print('Begin Meng et al. Hessian analysis ...')
         self.hessian_slices, self.hessian_volume = self.hessian_analysis()
-        print('Begin cavity enhancement filter ...')
-        self.cef_volume = self.cavity_enhancement_filter()
-
+        if len(self.volume.shape) > 2:
+            print('Begin cavity enhancement filter ...')
+            self.cef_volume = self.cavity_enhancement_filter()
+        else:
+            self.cef_volume = self.hessian_volume
+            self.cef_volume = self.cavity_enhancement_filter()
 
     def create_lung_mask(self):
         # binary threshold
         binary = helper_functions.create_binary_mask(self.volume)
-        return binary
-
-    def create_feature_values(self, x:int, y:int, z:int):
-        '''
-        Returns a list of feature values in the following order:
-        [coordinate, intensity, gradient, mean, 
-        variance, minimum, x_12(offset:1), 
-        q_1(offset:1), q_2(offset:1), q_3(offset:1), 
-        x_24(offset:1), maximum(offset:1), 
-        x_12(offset:2), q_1(offset:2), q_2(offset:2), 
-        q_3(offset:2), x_24(offset:2), maximum(offset:2),
-        x_12(offset:3), q_1(offset:3), q_2(offset:3), 
-        q_3(offset:3), x_24(offset:3), maximum(offset:3)]
-
-        Args:
-          x:int, y:int, z:int - voxel coordinate
-        '''
-        values = []
-        intensity = self.volume[x, y, z]
-        values.append(intensity)
-        gradient = self.gradient[x, y, z]
-        values.append[gradient]
-        for offset in [1, 2, 3]:
-            off_values = self._get_sphere_values(x, y, z, offset)
-            for val in off_values:
-                values.append(val)
-
-    def create_features(self):
-        values = []
-        col, row, plane = self.cfe_volume.shape
-        for i in range(col-1):
-            for j in range(row-1):
-                for k in range(plane-1):
-                    value_row = self.create_feature_values(col, row, plane)  
-                    values.append(value_row)          
+        return binary       
 
 
     def calculate_radii_per_generation(self):
@@ -128,11 +98,15 @@ class BronchialTree():
         The preprocessing step defined in the paper is to use an unsharp mask. No radius or amount were
         defined in the paper. The values herein are based on manual tuning.
         '''
-        preprocessed_slices = []
-        for i in reversed(range(len(self.slices))):
-            unsharp = unsharp_mask(self.slices[i], radius=5, amount=2)
-            preprocessed_slices.append(unsharp)
-        preprocessed_volume = np.dstack(preprocessed_slices)
+        if len(self.slices) > 1:
+            preprocessed_slices = []
+            for i in reversed(range(len(self.slices))):
+                unsharp = unsharp_mask(self.slices[i], radius=5, amount=2)
+                preprocessed_slices.append(unsharp)
+            preprocessed_volume = np.dstack(preprocessed_slices)
+        else:
+            unsharp = unsharp_mask(self.volume, radius=5, amount=2)
+            return None, unsharp
         return preprocessed_slices, preprocessed_volume
 
     def hessian_analysis(self):
@@ -140,11 +114,16 @@ class BronchialTree():
         Returns slices (for viewing) and volume (for viewing and further processing) that have had a Hessian
         matrix applied to it in which the function is a Gaussian filter.
         '''
-        hessian_vol = sato(self.preprocessed_volume, sigmas=range(1, 3), black_ridges=False)
-        hessian_slices = []
-        for i in range(len(self.preprocessed_slices)):
-            hessian_img = sato(self.preprocessed_slices[i], sigmas=range(1, 3), black_ridges=False)
-            hessian_slices.append(hessian_img)
+
+        if self.preprocessed_volume is not None:
+            hessian_vol = sato(self.preprocessed_volume, sigmas=range(1, 3), black_ridges=False)
+            return None, hessian_vol
+        else:
+            hessian_vol = sato(self.preprocessed_volume, sigmas=range(1, 3), black_ridges=False)
+            hessian_slices = []
+            for i in range(len(self.preprocessed_slices)):
+                hessian_img = sato(self.preprocessed_slices[i], sigmas=range(1, 3), black_ridges=False)
+                hessian_slices.append(hessian_img)
         return hessian_slices, hessian_vol
 
     def is_in_bounds(self, x:int, y:int, z:int)->bool:
@@ -156,9 +135,14 @@ class BronchialTree():
           y:int - y-coordinate
           z:int - z-coordinate
         '''
-        cols, rows, plane = self.hessian_volume.shape
-        if x < cols and y < rows and z < plane:
-            return True
+        if z == -1:
+            cols, rows = self.hessian_volume.shape
+            if x < cols and y < rows:
+                return True
+        else:
+            cols, rows, plane = self.hessian_volume.shape
+            if x < cols and y < rows and z < plane:
+                return True
         return False
 
     def calculate_P(self, x:int, y:int, z:int, i:int, j:int, k:int, r_1:int, r_2:int):
@@ -183,8 +167,12 @@ class BronchialTree():
         second_term_y = y+j*r_2
         second_term_z = z+k*r_2
 
-        if self.is_in_bounds(first_term_x, first_term_y, first_term_z) and self.is_in_bounds(second_term_x, second_term_y, second_term_z):
-            p_term = abs(self.hessian_volume[first_term_x, first_term_y, first_term_z] - self.hessian_volume[second_term_x, second_term_y, second_term_z])
+        if z > -1:
+            if self.is_in_bounds(first_term_x, first_term_y, first_term_z) and self.is_in_bounds(second_term_x, second_term_y, second_term_z):
+                p_term = abs(self.hessian_volume[first_term_x, first_term_y, first_term_z] - self.hessian_volume[second_term_x, second_term_y, second_term_z])
+        else:
+            if self.is_in_bounds(first_term_x, first_term_y, -1) and self.is_in_bounds(second_term_x, second_term_y, -1):
+                p_term = abs(self.hessian_volume[first_term_x, first_term_y] - self.hessian_volume[second_term_x, second_term_y])
 
         return p_term
 
@@ -210,10 +198,20 @@ class BronchialTree():
         third_term_x = x+i*r_2
         third_term_y = y+j*r_2
         third_term_z = z+k*r_2
+
+        if z == -1:
+            first_term_z = -1
+            third_term_z = -1
+
         if self.is_in_bounds(first_term_x, first_term_y, first_term_z) and self.is_in_bounds(x, y, z) and self.is_in_bounds(third_term_x, third_term_y, third_term_z):
-            first_term = self.hessian_volume[first_term_x, first_term_y, first_term_z]
-            second_term = 2*self.hessian_volume[x, y, z]
-            third_term = self.hessian_volume[(x+i*r_2), (y+j*r_2), (z+k*r_2)]
+            if z > -1:
+                first_term = self.hessian_volume[first_term_x, first_term_y, first_term_z]
+                second_term = 2*self.hessian_volume[x, y, z]
+                third_term = self.hessian_volume[(x+i*r_2), (y+j*r_2), (z+k*r_2)]
+            else:
+                first_term = self.hessian_volume[first_term_x, first_term_y]
+                second_term = 2*self.hessian_volume[x, y]
+                third_term = self.hessian_volume[(x+i*r_2), (y+j*r_2)]
             l_term = first_term - second_term + third_term
         return l_term
 
@@ -224,29 +222,48 @@ class BronchialTree():
 
         TODO: Limit this to only be called within the lung.
         '''
-        cols, rows, plane = self.hessian_volume.shape
+        if self.preprocessed_slices is not None:
+            cols, rows, plane = self.hessian_volume.shape
 
-        for c in range(cols-1):
-            for r in range(rows-1):
-                for p in range(plane-1):
+            for c in range(cols-1):
+                for r in range(rows-1):
+                    for p in range(plane-1):
+                        max_differences = []
+                        for i in [-1, 0, 1]:
+                            for j in [-1, 0, 1]:
+                                for k in [-1, 0, 1]:
+                                    max_difference_p_l = sys.float_info.min
+                                    for r_1 in self.avg_radii:
+                                        for r_2 in self.avg_radii:
+                                            l_term = self.calculate_L(x=c, y=r, z=p, i=i, j=j, k=k, r_1=r_1, r_2=r_2)
+                                            p_term = self.calculate_P(x=c, y=r, z=p, i=i, j=j, k=k, r_1=r_1, r_2=r_2)
+                                            if p_term >= 0.0 and l_term > sys.float_info.min:
+                                                difference = l_term - p_term
+                                                if difference > max_difference_p_l:
+                                                    max_difference_p_l = difference
+                                    max_differences.append(max_difference_p_l)
+                        self.hessian_volume[c, r, p] = sum(max_differences)
+        else:
+            cols, rows = self.hessian_volume.shape
+            for c in range(cols-1):
+                for r in range(rows-1):
                     max_differences = []
                     for i in [-1, 0, 1]:
                         for j in [-1, 0, 1]:
-                            for k in [-1, 0, 1]:
-                                max_difference_p_l = sys.float_info.min
-                                for r_1 in self.avg_radii:
-                                    for r_2 in self.avg_radii:
-                                        l_term = self.calculate_L(x=c, y=r, z=p, i=i, j=j, k=k, r_1=r_1, r_2=r_2)
-                                        p_term = self.calculate_P(x=c, y=r, z=p, i=i, j=j, k=k, r_1=r_1, r_2=r_2)
-                                        if p_term >= 0.0 and l_term > sys.float_info.min:
-                                            difference = l_term - p_term
-                                            if difference > max_difference_p_l:
-                                                max_difference_p_l = difference
-                                max_differences.append(max_difference_p_l)
-                    self.hessian_volume[c, r, p] = sum(max_differences)
+                            max_difference_p_l = sys.float_info.min
+                            for r_1 in self.avg_radii:
+                                for r_2 in self.avg_radii:
+                                    l_term = self.calculate_L(x=c, y=r, z=-1, i=i, j=j, k=-1, r_1=r_1, r_2=r_2)
+                                    p_term = self.calculate_P(x=c, y=r, z=-1, i=i, j=j, k=-1, r_1=r_1, r_2=r_2)
+                                    if p_term >= 0.0 and l_term > sys.float_info.min:
+                                        difference = l_term - p_term
+                                        if difference > max_difference_p_l:
+                                            max_difference_p_l = difference
+                            max_differences.append(max_difference_p_l)
+                    self.hessian_volume[c, r] = sum(max_differences)
         
-        with open('meng_cef/segmented_volumes/2.p', 'wb') as fp:
-           pickle.dump(self.hessian_volume, fp)
+        # with open('meng_cef/segmented_volumes/2.p', 'wb') as fp:
+        #    pickle.dump(self.hessian_volume, fp)
 
         return self.hessian_volume
 

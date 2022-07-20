@@ -94,7 +94,7 @@ def create_binary_mask(volume):
     binary = volume > thresh
     return binary
 
-def create_grayscale_mask(self, volume):
+def create_grayscale_mask(volume):
     thresh = threshold_otsu(volume)
     slc = volume.copy()
     slc[slc >= thresh] = 0
