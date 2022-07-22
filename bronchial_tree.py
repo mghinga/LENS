@@ -13,24 +13,23 @@ At a high level, the algorithm works as follows:
 The result should be a segmentation of the bronchus region.
 '''
 
-import statistics, math, sys, pickle
-
-from skimage.filters import unsharp_mask, sato, rank
+import statistics, math, sys
+from skimage.filters import unsharp_mask, sato
 from skimage import util
 from skimage.transform import rescale
 
 import numpy as np
 import pandas as pd
-
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 import helper_functions
 
 class BronchialTree():
-    def __init__(self, volume, lung_segmentations, x_mm, y_mm, number) -> None:
+    def __init__(self, volume, lung_segmentations, x_mm, y_mm, number, demo=False, bronchial_segmentation='') -> None:
         self.number = number
         self.volume = volume
         self.lung_vol = np.dstack(lung_segmentations)
+
         self.lung_mask = self.create_lung_mask()
         self.x_mm = x_mm
         self.y_mm = y_mm
@@ -41,20 +40,27 @@ class BronchialTree():
         self.morphometry_path = 'resources/morphometry.txt'
         self.morphometry_info = self.read_in_morphometry_info()
         self.avg_radii = self.calculate_radii_per_generation()
-        print('Begin Meng et al. preprocessing step ...')
+        print('Begin bronchial tree preprocessing step ...')
         self.preprocessed_slices, self.preprocessed_volume = self.preprocessing()
-        print('Begin Meng et al. Hessian analysis ...')
+        print('Begin bronchial tree Hessian analysis ...')
         self.hessian_slices, self.hessian_volume = self.hessian_analysis()
-        if len(self.volume.shape) > 2:
-            print('Begin cavity enhancement filter ...')
-            self.cef_volume = self.cavity_enhancement_filter()
+        if demo:
+            self.cef_volume = pd.read_pickle(bronchial_segmentation)
+            cef_slices = helper_functions.create_slices(self.cef_volume)
+            plt.imshow(cef_slices[len(cef_slices)//2], cmap='gray')
+            plt.title('Bronchial Segmentation')
+            plt.show()
         else:
-            self.cef_volume = self.hessian_volume
-            self.cef_volume = self.cavity_enhancement_filter()
+            if len(self.volume.shape) > 2:
+                print('Begin bronchial tree cavity enhancement filter ...')
+                self.cef_volume = self.cavity_enhancement_filter()
+            else:
+                self.cef_volume = self.hessian_volume
+                self.cef_volume = self.cavity_enhancement_filter()
 
     def create_lung_mask(self):
         # binary threshold
-        binary = helper_functions.create_binary_mask(self.volume)
+        binary = helper_functions.create_binary_mask(self.lung_vol)
         return binary       
 
 

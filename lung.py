@@ -23,7 +23,7 @@ import helper_functions
 LUNG_TEST = False
 
 class Lung:
-    def __init__(self, volume, px_height, px_width, voxel_x, voxel_y, voxel_z) -> None:
+    def __init__(self, volume, px_height, px_width, voxel_x, voxel_y, voxel_z, demo=False) -> None:
         # Note that for this to work, the Hounsfield Units must be preserved in the passed in volume, do NOT convert to another format before running
         self.volume = volume
         self.px_height = px_height
@@ -31,10 +31,13 @@ class Lung:
         self.voxel_x = voxel_x
         self.voxel_y = voxel_y
         self.voxel_z = voxel_z
+        self.demo = demo
         if voxel_z > 0:
             self.slices = helper_functions.create_slices(self.volume)
         else:
             self.slices = [self.volume]
+
+        print("Begin watershed segmentation of the entire lung.")
         self.segmentations, self.masks = self.process()
         self.lung_volume = self.calculate_lung_volume()
 
@@ -128,10 +131,15 @@ class Lung:
             segmentations.append(segmented)
             masks.append(lungfilter)
 
-        if LUNG_TEST:
+        if self.demo:
             segmented, lungfilter, outline, watershed, sobel_gradient, marker_internal, marker_external, marker_watershed = self.seperate_lungs(self.slices[len(slice_list)//2])
+            plt.imshow(self.slices[len(self.slices)//2], cmap='gray')
+            plt.title('Original Image')
+            plt.show()
             plt.imshow(lungfilter, cmap="gray")
+            plt.title('Lung Mask')
             plt.show()
             plt.imshow(segmented, cmap="gray")
+            plt.title('Segmented Lung')
             plt.show()
         return segmentations, masks
