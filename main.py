@@ -63,9 +63,10 @@ def main():
         exit()
     elif options.type == 's':
         dataset_name = 'three dimensional'
+        footprint_size = 1
         HAS_GROUND_TRUTH = True
         paths = walk_files('resources/three_dimensional')
-        paths = ['resources/three_dimensional/three_dimensional_images/6.nii', 'resources/three_dimensional/three_dimensional_masks/6.nii']
+        # paths = ['resources/three_dimensional/three_dimensional_images/1.nii', 'resources/three_dimensional/three_dimensional_masks/1.nii']
     elif options.type == 't':
         dataset_name = 'two dimensional'
         HAS_GROUND_TRUTH = True
@@ -132,7 +133,7 @@ def main():
 
 
     else:
-        init_demo = demo.Demo(demo_type)
+        demo.Demo(demo_type)
 
 
    
