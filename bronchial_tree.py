@@ -13,7 +13,7 @@ At a high level, the algorithm works as follows:
 The result should be a segmentation of the bronchus region.
 '''
 
-import statistics, math, sys
+import statistics, math, sys, pickle
 from skimage.filters import unsharp_mask, sato
 from skimage import util
 from skimage.transform import rescale
@@ -57,6 +57,7 @@ class BronchialTree():
             else:
                 self.cef_volume = self.hessian_volume
                 self.cef_volume = self.cavity_enhancement_filter()
+
 
     def create_lung_mask(self):
         # binary threshold
@@ -141,7 +142,8 @@ class BronchialTree():
           y:int - y-coordinate
           z:int - z-coordinate
         '''
-        if z == -1:
+        shape = self.hessian_volume.shape
+        if len(shape) == 2:
             cols, rows = self.hessian_volume.shape
             if x < cols and y < rows:
                 return True
@@ -268,7 +270,7 @@ class BronchialTree():
                             max_differences.append(max_difference_p_l)
                     self.hessian_volume[c, r] = sum(max_differences)
         
-        # with open('meng_cef/segmented_volumes/2.p', 'wb') as fp:
+        # with open('bronchial_segmentations/segmented_volumes/8.p', 'wb') as fp:
         #    pickle.dump(self.hessian_volume, fp)
 
         return self.hessian_volume
