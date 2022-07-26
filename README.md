@@ -14,6 +14,9 @@ LENS has four modes:
 
 ## Command Line Arguments
 To run in DEMO mode, use the following command: `python main.py -t d` and follow the prompts.
+
 To run in TWO DIMENSIONAL mode, use the following command: `python main.py -t t`
+
 To run in THREE DIMENSIONAL mode, use the following command: `python main.py -t s`
+
 To run in KASSIN ET AL. mode, use the following command: `python main.py -t k`
