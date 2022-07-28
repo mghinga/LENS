@@ -24,13 +24,13 @@ class Reader:
             self.truth = self.read_file(truth)
             self.volumes = helper_functions.create_slices(self.volume)
             self.truth = helper_functions.create_slices(self.truth)
-            volumes = []
             for i in range(len(self.volumes)):
-                print('Processing Slice Number: ', i)
-                vol = volume.Volume(self.src_file, self.volumes[i], self.voxel_x, self.voxel_y, 0, i, self.footprint_size, self.truth[i], self.demo, self.bronchial_segmentation)
-                self.lesion_volume = 0
-                self.lesion_volume = 0
-                self.no_processing_lesion_volume = 0
+                if np.count_nonzero(self.volumes[i]) > 0:
+                    print('Processing Slice Number: ', i)
+                    vol = volume.Volume(self.src_file, self.volumes[i], self.voxel_x, self.voxel_y, 0, i, self.footprint_size, self.truth[i], self.demo, self.bronchial_segmentation)
+                    self.lesion_volume = 0
+                    self.lesion_volume = 0
+                    self.no_processing_lesion_volume = 0
         else:
             if truth is not None:
                 self.truth = self.read_file(truth)

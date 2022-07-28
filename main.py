@@ -66,7 +66,7 @@ def main():
         footprint_size = 1
         HAS_GROUND_TRUTH = True
         paths = walk_files('resources/three_dimensional')
-        # paths = ['resources/three_dimensional/three_dimensional_images/1.nii', 'resources/three_dimensional/three_dimensional_masks/1.nii']
+        paths = ['resources/three_dimensional/three_dimensional_images/5.nii', 'resources/three_dimensional/three_dimensional_masks/5.nii']
     elif options.type == 't':
         dataset_name = 'two dimensional'
         HAS_GROUND_TRUTH = True
