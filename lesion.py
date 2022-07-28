@@ -36,7 +36,9 @@ class Lesion:
             self.bronchial_mask = self.create_combined_mask()
             self.total_lesion_voxels, self.total_lesion_volume = self.calculate_total_lesion_volume(self.bronchial_mask)
             return
-        elif len(self.volume.shape) > 2:
+        
+        elif self.lung_mask.shape[2] > 1:
+            print(self.lung_mask.shape)
             # remove parts of the masks and volumes
             length = self.volume.shape[2]
             # original image
