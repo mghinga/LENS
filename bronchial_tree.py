@@ -270,8 +270,8 @@ class BronchialTree():
                             max_differences.append(max_difference_p_l)
                     self.hessian_volume[c, r] = sum(max_differences)
         
-        # with open('bronchial_segmentations/segmented_volumes/8.p', 'wb') as fp:
-        #    pickle.dump(self.hessian_volume, fp)
+        with open('bronchial_segmentations/segmented_volumes/5.p', 'wb') as fp:
+           pickle.dump(self.hessian_volume, fp)
 
         return self.hessian_volume
 
