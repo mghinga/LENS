@@ -44,7 +44,7 @@ class BronchialTree():
         self.preprocessed_slices, self.preprocessed_volume = self.preprocessing()
         print('Begin bronchial tree Hessian analysis ...')
         self.hessian_slices, self.hessian_volume = self.hessian_analysis()
-        if demo:
+        if demo and bronchial_segmentation != '':
             self.cef_volume = pd.read_pickle(bronchial_segmentation)
             cef_slices = helper_functions.create_slices(self.cef_volume)
             plt.imshow(cef_slices[len(cef_slices)//2], cmap='gray')
@@ -269,10 +269,7 @@ class BronchialTree():
                                             max_difference_p_l = difference
                             max_differences.append(max_difference_p_l)
                     self.hessian_volume[c, r] = sum(max_differences)
-        
-        with open('bronchial_segmentations/segmented_volumes/5.p', 'wb') as fp:
-           pickle.dump(self.hessian_volume, fp)
-
+                    
         return self.hessian_volume
 
 

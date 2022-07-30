@@ -51,8 +51,6 @@ def main():
     if options.type == 'k':
         dataset_name = 'Kassin et al'
         directory = input("Enter file path: ")
-        if directory == 'coded':
-            directory = '/home/monicahinga/Documents/SIMCoV/find_centroids_ct_v2/resources/0702/00'
         while not os.path.isdir(directory) or not check_directory(directory):
             directory = input(
                 "Directory invalid. Enter a valid directory or press 'h' for help.: ")

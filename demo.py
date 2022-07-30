@@ -10,13 +10,12 @@ class Demo:
             print("Begin 3D segmentation demo.")
             read = reader.Reader(src_file, 0, 4, ground_truth_src_file, False, True, bronchial_tree_segmentation_src_file)
             helper_functions.view_3D(read.truth)
-
             
         elif demo_type == 't':
             print("Begin 2D segmentation demo.")
             src_file = 'resources/two_dimensional/two_dimensional_images.nii/tr_im.nii'
             ground_truth_src_file = 'resources/two_dimensional/two_dimensional_masks.nii/tr_mask.nii'
-            read = reader.Reader(src_file, 0, 6, ground_truth_src_file, True, True)
+            read = reader.Reader(src_file, 0, 6, ground_truth_src_file, True, True, '')
             
         else: 
             "This should not be possible. Impressive. Exiting."

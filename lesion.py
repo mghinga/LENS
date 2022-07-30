@@ -37,29 +37,30 @@ class Lesion:
             self.total_lesion_voxels, self.total_lesion_volume = self.calculate_total_lesion_volume(self.bronchial_mask)
             return
         
-        elif self.lung_mask.shape[2] > 1:
-            print(self.lung_mask.shape)
-            # remove parts of the masks and volumes
-            length = self.volume.shape[2]
-            # original image
-            self.volume = self.volume[:, :, 2:length-12]
-            # output of bronchial segmentation, bronchial tree is white
-            self.bronchial_mask = bronchial_mask[:, :, 2:length-12]
-            # lung segmentation mask, lung region is white
-            self.lung_mask = self.lung_mask[:, :, 2:length-12]
+        elif len(self.lung_mask) > 2:
+            if self.lung_mask.shape[2] > 1:
+                print(self.lung_mask.shape)
+                # remove parts of the masks and volumes
+                length = self.volume.shape[2]
+                # original image
+                self.volume = self.volume[:, :, 2:length-12]
+                # output of bronchial segmentation, bronchial tree is white
+                self.bronchial_mask = bronchial_mask[:, :, 2:length-12]
+                # lung segmentation mask, lung region is white
+                self.lung_mask = self.lung_mask[:, :, 2:length-12]
 
-            self.bronchial_mask = helper_functions.create_grayscale_mask(self.bronchial_mask)
-            self.bronchial_mask = self.create_combined_mask()
-            self.eroded_lung_mask = erosion(self.lung_mask, ball(self.footprint_size))
-            self.bronchial_mask = self.bronchial_mask * self.eroded_lung_mask
-            self.bronchial_mask = exposure.equalize_hist(self.bronchial_mask)
-            self.bronchial_mask = helper_functions.create_binary_mask(self.bronchial_mask)
-            white_hat = white_tophat(self.bronchial_mask, ball(1))
-            self.bronchial_mask = self.bronchial_mask ^ white_hat
-            self.bronchial_mask = self.generate_mask_for_calculating_volume()
-            self.bronchial_mask = self.bronchial_mask * self.volume
-            self.bronchial_mask = erosion(self.bronchial_mask, ball(1))
-            self.bronchial_mask = self.generate_mask_for_calculating_volume()
+                self.bronchial_mask = helper_functions.create_grayscale_mask(self.bronchial_mask)
+                self.bronchial_mask = self.create_combined_mask()
+                self.eroded_lung_mask = erosion(self.lung_mask, ball(self.footprint_size))
+                self.bronchial_mask = self.bronchial_mask * self.eroded_lung_mask
+                self.bronchial_mask = exposure.equalize_hist(self.bronchial_mask)
+                self.bronchial_mask = helper_functions.create_binary_mask(self.bronchial_mask)
+                white_hat = white_tophat(self.bronchial_mask, ball(1))
+                self.bronchial_mask = self.bronchial_mask ^ white_hat
+                self.bronchial_mask = self.generate_mask_for_calculating_volume()
+                self.bronchial_mask = self.bronchial_mask * self.volume
+                self.bronchial_mask = erosion(self.bronchial_mask, ball(1))
+                self.bronchial_mask = self.generate_mask_for_calculating_volume()
 
         else:
             self.bronchial_mask = helper_functions.create_grayscale_mask(self.bronchial_mask)
@@ -77,7 +78,7 @@ class Lesion:
         self.total_lesion_voxels, self.total_lesion_volume = self.calculate_total_lesion_volume(self.bronchial_mask)
 
         if self.demo:
-            if self.two_d:
+            if self.two_d is not None:
                 plt.imshow(self.bronchial_mask, cmap='gray')
                 plt.title('Lesion Mask')
                 plt.show()
@@ -89,6 +90,7 @@ class Lesion:
         name = self.generate_filename()
 
         if truth is not None:
+            print(truth)
             truth = resize(truth, self.bronchial_mask.shape)
             binary_lesion = helper_functions.create_binary_mask(self.bronchial_mask)
             binary_truth = helper_functions.create_binary_mask(truth)

@@ -27,7 +27,7 @@ class Reader:
             for i in range(len(self.volumes)):
                 if np.count_nonzero(self.volumes[i]) > 0:
                     print('Processing Slice Number: ', i)
-                    vol = volume.Volume(self.src_file, self.volumes[i], self.voxel_x, self.voxel_y, 0, i, self.footprint_size, self.truth[i], self.demo, self.bronchial_segmentation)
+                    vol = volume.Volume(self.src_file, self.volumes[i], self.voxel_x, self.voxel_y, 0, i, self.footprint_size, True, self.truth[i], self.demo, self.bronchial_segmentation)
                     self.lesion_volume = 0
                     self.lesion_volume = 0
                     self.no_processing_lesion_volume = 0
@@ -40,7 +40,7 @@ class Reader:
             self.lung_volume = self.vol.lung_volume
             self.lesion_volume = self.vol.lesion_volume
             self.no_processing_lesion_volume = self.vol.no_processing_lesions
-
+# self, src_file:str, volume:np.numarray, voxel_x, voxel_y, voxel_z, number, footprint_size, two_d=False, truth=None, demo=False, bronchial_segmentation=''
     def read_file(self, src):
         if os.path.isfile(src):
             ext = os.path.splitext(src)[1]
