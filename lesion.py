@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-import helper_functions
+import helper_functions, individual_lesion_volume
 
 class Lesion:
     def __init__(self, src_file, volume, lung_mask, bronchial_mask, mm_x, mm_y, mm_z, footprint_size, number, demo=False, two_d=False, truth=None, no_processing=False) -> None:
@@ -76,9 +76,14 @@ class Lesion:
 
 
         self.total_lesion_voxels, self.total_lesion_volume = self.calculate_total_lesion_volume(self.bronchial_mask)
+        if not self.two_d:
+            self.individual_lesions = individual_lesion_volume.LesionVolume(self.bronchial_mask, self.mm_x, self.mm_y, self.mm_z)
+            if truth is not None:
+                binary_truth = helper_functions.create_binary_mask(truth)
+                self.individual_truth_lesions = individual_lesion_volume.LesionVolume(binary_truth, self.mm_x, self.mm_y, self.mm_z, True)
 
         if self.demo:
-            if self.two_d is not None:
+            if self.two_d:
                 plt.imshow(self.bronchial_mask, cmap='gray')
                 plt.title('Lesion Mask')
                 plt.show()
@@ -90,7 +95,6 @@ class Lesion:
         name = self.generate_filename()
 
         if truth is not None:
-            print(truth)
             truth = resize(truth, self.bronchial_mask.shape)
             binary_lesion = helper_functions.create_binary_mask(self.bronchial_mask)
             binary_truth = helper_functions.create_binary_mask(truth)

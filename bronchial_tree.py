@@ -40,10 +40,7 @@ class BronchialTree():
         self.morphometry_path = 'resources/morphometry.txt'
         self.morphometry_info = self.read_in_morphometry_info()
         self.avg_radii = self.calculate_radii_per_generation()
-        print('Begin bronchial tree preprocessing step ...')
-        self.preprocessed_slices, self.preprocessed_volume = self.preprocessing()
-        print('Begin bronchial tree Hessian analysis ...')
-        self.hessian_slices, self.hessian_volume = self.hessian_analysis()
+        
         if demo and bronchial_segmentation != '':
             self.cef_volume = pd.read_pickle(bronchial_segmentation)
             cef_slices = helper_functions.create_slices(self.cef_volume)
@@ -51,6 +48,10 @@ class BronchialTree():
             plt.title('Bronchial Segmentation')
             plt.show()
         else:
+            print('Begin bronchial tree preprocessing step ...')
+            self.preprocessed_slices, self.preprocessed_volume = self.preprocessing()
+            print('Begin bronchial tree Hessian analysis ...')
+            self.hessian_slices, self.hessian_volume = self.hessian_analysis()
             if len(self.volume.shape) > 2:
                 print('Begin bronchial tree cavity enhancement filter ...')
                 self.cef_volume = self.cavity_enhancement_filter()

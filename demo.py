@@ -9,7 +9,7 @@ class Demo:
         if demo_type == 's':
             print("Begin 3D segmentation demo.")
             read = reader.Reader(src_file, 0, 4, ground_truth_src_file, False, True, bronchial_tree_segmentation_src_file)
-            helper_functions.view_3D(read.truth)
+            # helper_functions.view_3D(read.truth)
             
         elif demo_type == 't':
             print("Begin 2D segmentation demo.")

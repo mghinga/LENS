@@ -64,7 +64,6 @@ def main():
         footprint_size = 1
         HAS_GROUND_TRUTH = True
         paths = walk_files('resources/three_dimensional')
-        paths = ['resources/three_dimensional/three_dimensional_images/5.nii', 'resources/three_dimensional/three_dimensional_masks/5.nii']
     elif options.type == 't':
         dataset_name = 'two dimensional'
         HAS_GROUND_TRUTH = True
@@ -138,16 +137,8 @@ def main():
 if __name__ == "__main__":
     start_time = time.time()
     main()
-    total_time = time.time() - start_time
-    count = 0
-    units = ' seconds'
-    while total_time > 60 and count < 2:
-        total_time = total_time/60
-        count += 1
-    if count == 1:
-        units = ' minutes'
-    else:
-        units = ' hours'
+    total_time = (time.time() - start_time)//60
+    units = ' minutes'
 
     print('Total Execution Time: ', str(total_time), units)
 
