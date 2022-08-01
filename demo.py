@@ -5,7 +5,7 @@ class Demo:
         self.demo_type = demo_type
         src_file = 'resources/three_dimensional/three_dimensional_images/1.nii'
         ground_truth_src_file = 'resources/three_dimensional/three_dimensional_masks/1.nii'
-        bronchial_tree_segmentation_src_file = 'bronchial_segmentations/segmented_volumes/1.p'
+        bronchial_tree_segmentation_src_file = 'resources/bronchial_segmentations/1.p'
         if demo_type == 's':
             print("Begin 3D segmentation demo.")
             read = reader.Reader(src_file, 0, 4, ground_truth_src_file, False, True, bronchial_tree_segmentation_src_file)
