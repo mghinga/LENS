@@ -20,3 +20,6 @@ To run in TWO DIMENSIONAL mode, use the following command: `python main.py -t t`
 To run in THREE DIMENSIONAL mode, use the following command: `python main.py -t s`
 
 To run in KASSIN ET AL. mode, use the following command: `python main.py -t k`
+
+## Demo Files
+Running the bronchial tree segmentation can take upwards of 25 hours. For this reason, I am making some files available to run the 3D segmented volumes without having to re-segment the bronchial tree. These can be found [on Google Drive](https://drive.google.com/drive/folders/1ZKCID0F9OIToZCTuGQq9ITO31KzMfuEs?usp=sharing). Put the files as-is in your project path, starting with the `resources` directory.
